@@ -1,0 +1,12 @@
+
+
+middleware:
+  planner:
+    - store_artifact
+
+  sql:
+    - store_artifact
+
+  visualization:
+    - store_artifact
+
