@@ -11,10 +11,10 @@ import json
 
 
 
-@registry_tool(tags = 'all',
-        domains = None,
+@registry_tool(tags = ['all'],
+        domains = ['tool'],
         source = 'local',
-        visibility = 'private',
+        visibility = 'shared',
         allowed_agents = ['planner', 'sql', 'visualization'],
         server_name = None)
 @tool

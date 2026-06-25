@@ -33,15 +33,17 @@ def registry_tool(
 
 
 def register_external_tool(tool_obj, source, server_name):
-    tags = set(tags or [])
-    domains = set(domains or [])
-    allowed_agents = set(allowed_agents or [])
+    tags = set([])
+    domains = set([])
+    allowed_agents = set([])
 
-
-    tool_obj._tool_meta = {
-        'source': source,
-        'server_name': server_name
-        }
+    tool_obj._tool_meta = ToolMeta(
+        source = source,
+        domains = domains,
+        tags = tags,
+        allowed_agents = allowed_agents,
+        server_name = server_name,
+        visibility = 'shared')
     
     TOOL_REGISTRY.append(tool_obj)
 

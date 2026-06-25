@@ -4,8 +4,7 @@ from .state import PlnnerState
 from langchain.agents import create_agent
 
 
-def planner_build(llm, tools, checkpointer, middlewares, store):
-
+def planner_builder(llm, tools, checkpointer, middlewares, store):
     return create_agent(
         name = 'planner',
         model = llm,

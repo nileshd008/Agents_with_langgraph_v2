@@ -8,11 +8,11 @@ from tools.decorators import registry_tool
 import re
 
 
-@registry_tool(tags = 'plnner_tool',
+@registry_tool(tags = ['plnner_tool'],
         domains = None,
         source = 'local',
         visibility = 'private',
-        allowed_agents = 'planner',
+        allowed_agents = ['planner'],
         server_name = None)
 @tool
 def sql_specialist(query: str, runtime: ToolRuntime):
@@ -35,11 +35,11 @@ def sql_specialist(query: str, runtime: ToolRuntime):
         return {'messages': [ToolMessage(content = f'update schema error: {str(e)}', tool_call_id = runtime.tool_call_id)]}
 
 
-@registry_tool(tags = 'plnner_tool',
+@registry_tool(tags = ['plnner_tool'],
         domains = None,
         source = 'local',
         visibility = 'private',
-        allowed_agents = 'planner',
+        allowed_agents = ['planner'],
         server_name = None)
 @tool
 def visualization_tool(query: str, runtime: ToolRuntime):

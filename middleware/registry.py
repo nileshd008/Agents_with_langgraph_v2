@@ -1,19 +1,12 @@
 
 
-from .tools import store_artifact
-
+from .tools import *
+from config.agent_mcp_config import AGENT_MCP_ACCESS_CONF
 
 class MiddlewareRegistry:
 
     def __init__(self):
-        self._builders = {
-            'store_artifact': lambda: store_artifact()
-        }
+        self._builders = {'store_artifact': store_artifact}
 
-    def create(self, key:str):
-        if key not in self._builders:
-            raise KeyError(f'Unknown middleware key - {key}')
-        return self._builders[key]()
-        
-    def create_many(self, keys: list[str]):
-        return [self.create(k) for k in keys]
+    def get_middlewares(self, agent_name):
+        return [self._builders[k] for k in AGENT_MCP_ACCESS_CONF[agent_name]['middleware']]

@@ -15,16 +15,16 @@ class ToolSelector:
             if not meta:
                 continue
             
-            if meta.get('source') == 'local':
+            if meta.source == 'local':
                 if agent_name in meta.allowed_agents:
                     selected_tools.append(tool_obj)
              
-            
-            if meta.get('source') == 'mcp':
+            if meta.source == 'mcp':
                 if not AGENT_MCP_ACCESS_CONF.get(agent_name)['enable_mcp']:
                     continue
 
                 allowed_servers = AGENT_MCP_ACCESS_CONF.get(agent_name)['mcp_servers']
-                if meta.get('server_name') in allowed_servers:
+                if meta.server_name in allowed_servers:
                     selected_tools.append(tool_obj)
+
         return selected_tools

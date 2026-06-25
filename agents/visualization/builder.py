@@ -4,7 +4,7 @@ from .state import VisualizeState
 from langchain.agents import create_agent
 
 
-def visualization_build(llm, tools, checkpointer, middlewares, store):
+def visualization_builder(llm, tools, checkpointer, middlewares, store):
 
     return create_agent(
         name = 'visualization',
