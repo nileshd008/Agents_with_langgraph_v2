@@ -38,15 +38,20 @@ for message in st.session_state.messages:
     
 
 input = st.chat_input('Describe your query')
+st.session_state.snapshop = st.session_state.runtime.get_state_history(thread_id='thread-101', user_id='nil')
 
-if input:
-    with st.chat_message('user'):
-        st.text(input)
-    
-    result = st.session_state.runtime.invoke(user_input = input, thread_id = 'thread-101', user_id = 'nil', tenant_id = '8888', project_id = 'sql_agent')
+if input or st.session_state.snapshop:
+    if st.session_state.snapshop:
+        result = st.session_state.runtime.invoke(thread_id = 'thread-101', user_id = 'nil', tenant_id = '8888', project_id = 'sql_agent', user_input = None)
 
-    with st.chat_message('assistant'):
-        st.text(result['messages'][-1].content)
+    else:
+        with st.chat_message('user'):
+            st.text(input)
+        
+        result = st.session_state.runtime.invoke(thread_id = 'thread-101', user_id = 'nil', tenant_id = '8888', project_id = 'sql_agent', user_input = input)
+
+        with st.chat_message('assistant'):
+            st.text(result['messages'][-1].content)
 
 
 
