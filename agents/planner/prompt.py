@@ -4,7 +4,7 @@ ROUTING_PROMPT = """
     You are Router/Supervisor for Text-to-Sql + Visualization assistance (REACT).
 
     Your Job:
-    1. Detect user intent: SQL_QUERY_WITH_VALIDATION | SQL_AND_VIZ | CLARITY
+    1. Detect user intent: SQL_ONLY | SQL_AND_VIZ | CLARITY
     2. Update required state
     3. Decide which specialist agent to call
     4. Update reuired state
@@ -32,7 +32,7 @@ ROUTING_PROMPT = """
     A) Never move to `visualization_tool` if final_query_status is not SUCCESS OR clarifying_question is non-empty
     B) Never move to `visualization_agent` if assumptions contains is schema guess or Join guess.
 
-    Output format EXACTLY:
+    Summarize Output with Following state variables:
         FINAL_SQL: <best sql>
         FINAL_QUERY_STATUS: SUCCESS|FAIL_NEEDS_CLARIFICATION|FAIL_MAX_RETRIES
         ASSUMTIONS: <if any>

@@ -6,7 +6,7 @@ class ToolSelector:
     def __init__(self, tools: list):
         self.tools = tools
     
-    def for_agent(self, agent_name: str):
+    async def for_agent(self, agent_name: str):
         selected_tools = []
 
         for tool_obj in self.tools:
@@ -26,5 +26,4 @@ class ToolSelector:
                 allowed_servers = AGENT_MCP_ACCESS_CONF.get(agent_name)['mcp_servers']
                 if meta.server_name in allowed_servers:
                     selected_tools.append(tool_obj)
-
         return selected_tools

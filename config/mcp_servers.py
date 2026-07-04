@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-# config file for all mcp servers
+
 
 
 
@@ -19,13 +19,5 @@ MCP_SERVER_CONFIG = {
             'PYTHONBREAKPOINT': '0'
         },
     },
-
-    # 'remote_mcp': {
-    #     'transport':'http',
-    #     'url': 'https://example.com/mcp',
-    #     'headers': {
-    #         'Authorization': 'Bearer YOUR_TOKEN'
-    #     }
-    # }
 
 }

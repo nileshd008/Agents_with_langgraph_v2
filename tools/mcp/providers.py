@@ -3,6 +3,26 @@
 from tools.decorators import register_external_tool
 from langchain_mcp_adapters.client import MultiServerMCPClient
 import asyncio
+import threading
+import inspect
+
+
+class AsyncRunner:
+    def __init__(self):
+        self.loop = asyncio.new_event_loop()
+        self.thread = threading.Thread(
+            target=self._run_loop,
+            daemon=True
+        )
+        self.thread.start()
+
+    def _run_loop(self):
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_forever()
+
+    def run(self, coro):
+        future = asyncio.run_coroutine_threadsafe(coro, self.loop)
+        return future.result()
 
 
 
@@ -14,24 +34,27 @@ class McpToolProvider:
         client = MultiServerMCPClient(conf)
         return await client.get_tools()
     
-    def register_tools(self):
+    async def register_tools(self):
         for k, v in self.server_config.items():
-            try:
-                loop = asyncio.get_event_loop()
-            except:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
+            # try:
+            #     loop = asyncio.get_event_loop()
+            # except:
+            #     loop = asyncio.new_event_loop()
+            #     asyncio.set_event_loop(loop)
 
-            if not loop.is_running():
-                try:
-                    tools = loop.run_until_complete(self.load_tools(conf = {k: v}))
-                except:
-                    tools = asyncio.run(self.load_tools(conf = {k: v}))
-            else:
-                tools = asyncio.run_coroutine_threadsafe(self.load_tools(conf = {k: v}), loop)
+            # if not loop.is_running():
+            #     try:
+            #         tools = loop.run_until_complete(self.load_tools(conf = {k: v}))
+            #     except:
+            tools = await self.load_tools(conf = {k: v})
+            # else:
+            #     asyncio.set_event_loop(loop)
+            #     tools = asyncio.run_coroutine_threadsafe(self.load_tools(conf = {k: v}), loop)
+            #     print(tools)
+
 
             for tool_obj in tools:
                 register_external_tool(tool_obj, 'mcp', k)
-            
+
 
 
