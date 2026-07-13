@@ -128,12 +128,14 @@ def get_sql_table_schema() -> dict:
                 }
 
 @mcp_server.tool
-def validate_query(query: str) -> dict:
+def validate_query(query: str, dialect:str,  special_kwargs = None) -> dict:
     """
     Validate Sql Query against databse without Fetching data.
     
     Args:
      query: Sql Query to check its valdity against database.
+     special_kwargs: Non required kargs
+     dialect: dialect of sql
     
     Returns:
 
@@ -141,8 +143,13 @@ def validate_query(query: str) -> dict:
     conn = engine.connect()
 
     try:
-        sql_result = conn.execute(sqlalchemy.text(f"Explain {query}"))
-        return {'status': 'SUCCESS', 'error': None, 'Query': query, 'result': sql_result}
+        if special_kwargs and not special_kwargs['requires_sandbox']:
+            if dialect.lower() == 'mysql':
+                sql_result = conn.execute(sqlalchemy.text(f"Explain {query}"))
+                return {'status': 'SUCCESS', 'error': None, 'Query': query, 'result': sql_result}
+        else:
+            return {'status': 'FAIL', 'error': """Not Implemented/Cannot Proceed to validate this Query as `requires_sandbox` is {special_kwargs['requires_sandbox']}
+                    with list of tables {special_kwargs['sandbox_tables']}.""", 'Query': query, 'result': ''}
     except Exception as e:
         return {'status': 'FAIL', 'error': str(e), 'Query': query, 'result': ''}
 
