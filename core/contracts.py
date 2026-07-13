@@ -1,6 +1,7 @@
 
 from dataclasses import dataclass, field
 from typing import Literal
+from agents.registry import AgentRegistry
 
 TOOL_VISIBILITY = Literal['private', 'shared']
 TOOLSOURCE = Literal['local', 'mcp']
@@ -19,8 +20,8 @@ class ToolMeta:
 class AppRuntimeContext:
     user_id: str
     project_id: str
-    agent_registry: object
-    tenant_id: str = field(default = None)
+    agent_registry: AgentRegistry
+    tenant_id: str
 
 
 

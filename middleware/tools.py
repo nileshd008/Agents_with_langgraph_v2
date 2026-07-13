@@ -168,60 +168,60 @@ async def store_artifact(request: ToolCallRequest, handler: Callable[[ToolCallRe
     return result
 
 
-# @before_agent(can_jump_to=['end'])
-# async def query_sanitizer(state: PlnnerState, runtime: Runtime):
-#     last_user_query = None
-#     if len(state['messages']) > 0 and isinstance(state['messages'][-1], AIMessage):
-#         return {'jump_to': 'end'}
+@before_agent(can_jump_to=['end'])
+async def query_sanitizer(state: PlnnerState, runtime: Runtime):
+    last_user_query = None
+    if len(state['messages']) > 0 and isinstance(state['messages'][-1], AIMessage):
+        return {'jump_to': 'end'}
     
-#     all_histry = [i for i in state['messages'] if isinstance(i, HumanMessage)]
+    all_histry = [i for i in state['messages'] if isinstance(i, HumanMessage)]
 
-#     if all_histry:
-#         last_user_query = all_histry[-1].content
+    if all_histry:
+        last_user_query = all_histry[-1].content
 
-#     else:
-#         return {'jump_to': 'end'}
+    else:
+        return {'jump_to': 'end'}
     
-#     if len(all_histry) > 1 and all_histry[-2]:
-#         previous_user_query =  all_histry[-2].content
+    if len(all_histry) > 1 and all_histry[-2]:
+        previous_user_query =  all_histry[-2].content
 
-#     else:
-#         previous_user_query = None
+    else:
+        previous_user_query = None
     
-#     final_prompt = f"""You are strict classifiction model.
+    final_prompt = f"""You are strict classifiction model.
 
-#     Your Task:
-#         Decide whether the user's latest messages is aksing to continue, explain, refine or modify the same previously generated SQL query or specifying more 
-#         to resolve ambigity on previous user query, or whether it is a new request.
+    Your Task:
+        Decide whether the user's latest messages is aksing to continue, explain, refine or modify the same previously generated SQL query or specifying more 
+        to resolve ambigity on previous user query, or whether it is a new request.
 
-#     1.SAME_SQL_CONTINUE_OR_MODIFY:
-#         The user is referring to previously genearted sql query and wants to continue, explain, run, format, optimise, or modify it.
+    1.SAME_SQL_CONTINUE_OR_MODIFY:
+        The user is referring to previously genearted sql query and wants to continue, explain, run, format, optimise, or modify it.
 
-#     2.NEW_SQL_REQUEST:
-#         The user is asking for a new SQL query or new data extraction/analysis request taht is not clearly a continuation of previousl sql.
+    2.NEW_SQL_REQUEST:
+        The user is asking for a new SQL query or new data extraction/analysis request taht is not clearly a continuation of previousl sql.
 
-#     CURRENT USER REQUEST: {last_user_query}
-#     LAST USER QUERY: {previous_user_query}
-#     LAST AGENT STATE:
-#         SESSION_SUMMARY: {state.get('user_session_summary', None)}
-#         PREVIOUS_INTENT: {state.get('intent', None)}
-#         LAST_VALIDATED_SQL: {state.get('last_validated_sql', None)}
+    CURRENT USER REQUEST: {last_user_query}
+    LAST USER QUERY: {previous_user_query}
+    LAST AGENT STATE:
+        SESSION_SUMMARY: {state.get('user_session_summary', None)}
+        PREVIOUS_INTENT: {state.get('intent', None)}
+        LAST_VALIDATED_SQL: {state.get('last_validated_sql', None)}
 
-#     """
+    """
     
-#     prompt = final_prompt.format(last_user_query, previous_user_query, state.get('user_session_summary', None), state.get('intent', None), state.get('last_validated_sql', None))
-#     prompt = """RETURN JSON ONLY:
-#         {
-#         "label": "SAME_SQL_CONTINUE_OR_MODIFY|NEW_SQL_REQUEST",
-#         "reason": "short reason"
-#         }"""
+    prompt = final_prompt.format(last_user_query, previous_user_query, state.get('user_session_summary', None), state.get('intent', None), state.get('last_validated_sql', None))
+    prompt = """RETURN JSON ONLY:
+        {
+        "label": "SAME_SQL_CONTINUE_OR_MODIFY|NEW_SQL_REQUEST",
+        "reason": "short reason"
+        }"""
     
-#     result = guard_llm.invoke(prompt)
+    result = guard_llm.invoke(prompt)
 
-#     if result.content.strip().split()[-1] == 'safe':
-#         return {}
+    if result.content.strip().split()[-1] == 'safe':
+        return {}
     
-#     else:
-#         return {'messages': [AIMessage(content = 'Special result not allowed')], 'jump_to': 'end'}
+    else:
+        return {'messages': [AIMessage(content = 'Special result not allowed')], 'jump_to': 'end'}
 
 
