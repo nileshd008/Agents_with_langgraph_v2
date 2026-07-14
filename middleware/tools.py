@@ -20,56 +20,7 @@ import asyncio
 @wrap_tool_call
 async def store_artifact(request: ToolCallRequest, handler: Callable[[ToolCallRequest], ToolMessage | Command]):
 
-    if request.tool_call['name'].lower() == 'validate_query':
-        
-        class_prompt = """
-        You are a SQL query Classifier and Safety validator.
-
-        Your job is to classify given SQL query into exactly one of thr following category:
-        1. READ_ONLY  2. DML  3. DDL  4. UNSAFE  5. UNKNOWN
-
-        GIVEN QUERY: {query}
-        DIALECT: {dialect}
-
-        Classification Rules:
-        1. Classifiy as READ_ONLY  if query only reads metadata or data and does not modify database state.
-        Example: SELECT, WITH, DESCRIBE
-
-        2. Classify as DML if query modifies table data
-        Example: INSERT, UPDATE, DELETE, MERGE
-
-        3.Classify as DDL if query creates, changes, removes or renames database structure
-        Example: ALTER, TRUNCATE, DELETE, RENAME, CRATE_INDEX, DROP_INDEX, DROP
-
-        4. Classify as UNSAFE if query changes permission, transaction control, server/session state, or performa administrative opertaions.
-        Example: GRANT, REVOKE, COMMIT, ROLLBACK, LOCK, UNLOCK
-        
-        Return
-            'classification' : 'READ_ONLY | DML | DDL | UNSAFE | UNKNOWN'
-            'requires_sandbox' : 'true if classification DML or DDL else false'
-            'sandbox_tables': 'list of table needed for query execution in sandbox'
-
-        """
-        class output(BaseModel):
-            classification: Literal['READ_ONLY', 'DML', 'DDL', 'UNSAFE', 'UNKNOWN'] = Field(default = 'READ_ONLY', description = 'query classification')
-            requires_sandbox: bool = Field(default = False, description = 'True if classification DML or DDL else False')
-            sandbox_tables: List[str] = Field(default = [], description = 'List of tables needed for query execution in sandbox')
-            
-
-        result = await request.runtime.context.agent_registry.get('gen_llm').with_structured_output(output).ainvoke(class_prompt.format(query = request.tool_call['args']['query'], dialect = request.tool_call['args']['dialect']))
-        
-        if result.requires_sandbox:
-            modified_request = request.override(
-                tool_call = {
-                    **request.tool_call, 
-                    'args': {
-                        **request.tool_call['args'], 
-                        'special_kwargs': {'requires_sandbox': result.requires_sandbox, 'sandbox_tables': result.sandbox_tables}
-                    }
-                }
-            )
-    else:
-        result = await handler(request)
+    result = await handler(request)
 
     runtime = request.runtime
     config = runtime.config['configurable']

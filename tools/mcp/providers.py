@@ -36,22 +36,8 @@ class McpToolProvider:
     
     async def register_tools(self):
         for k, v in self.server_config.items():
-            # try:
-            #     loop = asyncio.get_event_loop()
-            # except:
-            #     loop = asyncio.new_event_loop()
-            #     asyncio.set_event_loop(loop)
-
-            # if not loop.is_running():
-            #     try:
-            #         tools = loop.run_until_complete(self.load_tools(conf = {k: v}))
-            #     except:
+        
             tools = await self.load_tools(conf = {k: v})
-            # else:
-            #     asyncio.set_event_loop(loop)
-            #     tools = asyncio.run_coroutine_threadsafe(self.load_tools(conf = {k: v}), loop)
-            #     print(tools)
-
 
             for tool_obj in tools:
                 register_external_tool(tool_obj, 'mcp', k)

@@ -1,7 +1,7 @@
 from fastmcp import FastMCP, Client
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.dialects import sqlite
-from sqlalchemy import Table, MetaData, create_engine
+from sqlalchemy import Table, MetaData, create_engine, Select
 from google.cloud.sql.connector import Connector
 import sqlalchemy
 from typing import List, Dict
@@ -35,19 +35,17 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger("db_tools_server")
-
+sandbox_conn = os.getenv('sandbox_connection')
 db_name = os.getenv('database_name')
 username = os.getenv('username')
 db_pass = urllib.parse.quote_plus(os.getenv('db_passward'))
 connection_name = os.getenv('connection_name')
-print(db_pass)
 
 df = None
 result = None
 
-engine = create_engine(
-    f"mysql+pymysql://{username}:{db_pass}@172.23.0.1:3306/{db_name}"
-)
+engine = create_engine(f"mysql+pymysql://{username}:{db_pass}@172.23.0.1:3306/{db_name}")
+sandbox_engine = create_engine(sandbox_conn)
 
 @mcp_server.tool
 def greeting_tool(name: str):
@@ -128,28 +126,65 @@ def get_sql_table_schema() -> dict:
                 }
 
 @mcp_server.tool
-def validate_query(query: str, dialect:str,  special_kwargs = None) -> dict:
+def validate_query(query: str, dialect:str, requires_sandbox: bool, tables: List[str]) -> dict:
     """
     Validate Sql Query against databse without Fetching data.
     
     Args:
-     query: Sql Query to check its valdity against database.
-     special_kwargs: Non required kargs
+     query: Sql Query to check its valdity against database
      dialect: dialect of sql
+     requires_sandbox: sandbox requirement for query validation
+     tables: list of tables required for query execution in sandbox
     
     Returns:
+
 
     """
     conn = engine.connect()
 
+    def copy_to_sandbox(original_engine, sandbox_engine, table_name):
+        try:
+            for table in table_name:
+                source_meta = MetaData()
+                target_meta = MetaData()
+            
+                source_table = Table(
+                    table,
+                    source_meta,
+                    schema = None,
+                    autoload_with = original_engine
+                )
+
+                target_table = source_table.to_metadata(target_meta, schema = None)
+                target_meta.create_all(sandbox_engine, tables = [target_table])
+
+                with original_engine.connect() as source_conn:
+                    result = source_conn.execute(Select(source_table))
+
+                    rows = [dict(row._mapping) for row in result]
+                if rows:
+                    with sandbox_engine.begin() as target_conn:
+                        target_conn.execute(target_table.insert(), rows)
+            return {'status': 'success', 'error': ''}
+        except Exception as e:
+            return {'status': 'fail', 'error': str(e)}
+            
+    
+
     try:
-        if special_kwargs and not special_kwargs['requires_sandbox']:
+        if not requires_sandbox:
             if dialect.lower() == 'mysql':
                 sql_result = conn.execute(sqlalchemy.text(f"Explain {query}"))
                 return {'status': 'SUCCESS', 'error': None, 'Query': query, 'result': sql_result}
         else:
-            return {'status': 'FAIL', 'error': """Not Implemented/Cannot Proceed to validate this Query as `requires_sandbox` is {special_kwargs['requires_sandbox']}
-                    with list of tables {special_kwargs['sandbox_tables']}.""", 'Query': query, 'result': ''}
+            print('inside', requires_sandbox)
+            res = copy_to_sandbox(engine, sandbox_engine, tables)
+            if res['status'].lower() == 'success':
+                conn = sandbox_engine.connect()
+                sql_result = conn.execute(sqlalchemy.text(f"Explain {query}"))
+                return {'status': 'SUCCESS', 'error': None, 'Query': query, 'result': sql_result}
+            else:
+                return {'status': 'FAIL', 'error': f"""{res['error']}""", 'Query': query, 'result': ''}
     except Exception as e:
         return {'status': 'FAIL', 'error': str(e), 'Query': query, 'result': ''}
 

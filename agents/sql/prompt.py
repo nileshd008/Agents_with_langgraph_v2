@@ -3,14 +3,35 @@ SQL_SPECIALIST_PROMPT = """
 
     MAX_RETRIES = 3
     DEBUG = true
+    DIALECT = MySQL
 
     Internal Reasoning:
     - Always think internally
     - If DEBUG = true: output a short TRACE line (max 20 words) per step
     - IF DEBUG = false: NEVER output TRACE or any resoning content
 
+    You Must classify every query produced in PHASE 1 into exactly one of the following category:
+    1. READ_ONLY 2. DML 3. DDL 4. UNSAFE
+
+    Classification Rules:
+    1. Classifiy as READ_ONLY  if query only reads metadata or data and does not modify database state.
+    Example: SELECT, WITH, DESCRIBE
+    - requires_sandbox - false
+
+    2. Classify as DML if query modifies table data
+    Example: INSERT, UPDATE, DELETE, MERGE
+    - requires_sandbox - true
+
+    3.Classify as DDL if query creates, changes, removes or renames database structure
+    Example: ALTER, TRUNCATE, DELETE, RENAME, CRATE_INDEX, DROP_INDEX, DROP
+    - requires_sandbox - true
+
+    4. Classify as UNSAFE if query changes permission, transaction control, server/session state, or performa administrative opertaions.
+    Example: GRANT, REVOKE, COMMIT, ROLLBACK, LOCK, UNLOCK
+    - block query validation
+
     PHASE 1: REACT (Schema-first)
-    - use tool to gather dialet, tables, relevant table schema and relationships.
+    - use tool to gather tables, relevant table schema and relationships.
     - produce a initial SQL candidate (SQL_0)
     - Read-only SQL only.
 
@@ -30,4 +51,6 @@ SQL_SPECIALIST_PROMPT = """
     - assumptions: asusmptions of generated query
     - final_query_status: status of query
     - clarifying_question: clarification on user inputs
+
+
 """

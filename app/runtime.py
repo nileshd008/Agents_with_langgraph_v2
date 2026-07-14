@@ -58,6 +58,17 @@ class AgentA:
             model_kwargs={"tool_choice": "auto"}
         )
 
+
+        gllm = ChatOpenAI(
+            model="Qwen/Qwen3-235B-A22B-Instruct-2507",
+            api_key=os.environ["DEEPINFRA_API_KEY"],
+            base_url="https://api.deepinfra.com/v1/openai",
+            temperature=0.1
+        )
+
+
+
+
         await McpToolProvider(MCP_SERVER_CONFIG).register_tools()
         tools = ToolSelector(TOOL_REGISTRY)
         middlewares = MiddlewaresSelectors(MiddlewareRegistry())
@@ -67,7 +78,8 @@ class AgentA:
                             tools = await tools.for_agent('sql'),
                             checkpointer = self.checkpoint,
                             middlewares = middlewares.for_agent('sql'),
-                            store = self.store)
+                            store = self.store,
+                            context_schema = AppRuntimeContext)
         
         visualization_agent = visualization_builder(llm,
                             tools = await tools.for_agent('visualization'),
@@ -78,6 +90,7 @@ class AgentA:
         agent_registry = AgentRegistry()
         agent_registry.register('sql', sql_agent)
         agent_registry.register('visualization', visualization_agent)
+        agent_registry.register('gen_llm', gllm)
 
         self.context = AppRuntimeContext(
                             user_id =  'nil',
@@ -101,7 +114,6 @@ class AgentA:
             result = await self.planner_agent.aget_state(config = {'configurable':{'thread_id': thread_id,'user_id': user_id}})
             return result.values.get('messages', [])
         except Exception as e:
-            print('get_messages', str(e))
             return [AIMessage(content = str(e))]
 
     async def get_state_history(self, thread_id, user_id):
@@ -161,50 +173,3 @@ class AppRuntime:
         future = asyncio.run_coroutine_threadsafe(self.rt.aclose(), self.loop)
         future.result()
         self.loop.call_soon_threadsafe(self.loop.stop)
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    # async def get_state_messages(self, thread_id: str, user_id:str):
-    #     result = await self.planner_agent.aget_state(config = {'configurable':{'thread_id': thread_id,'user_id': user_id}})
-    #     result = result.values
-    #     return result.get('messages', [])
-        
-            
-    
-    # async def get_state_history(self, thread_id, user_id):
-    #     "fault tolerance implementation in langgraph"
-    #     for i in await self.planner_agent.get_state_history(config = {'configurable':{'thread_id': thread_id,'user_id': user_id}}):
-    #         return i.next if hasattr(i, 'next') else False
-    #     return False
-
-    # async def invoke(self, thread_id: str, user_id:str, tenant_id:str, project_id:str, user_input:str = None):
-        
-    #     context = AppRuntimeContext(
-    #                         user_id =  user_id,
-    #                         tenant_id = tenant_id,
-    #                         project_id = project_id,
-    #                         agent_registry = self.agent_registry
-    #                     )
-    #     if user_input:  
-    #         return await self.planner_agent.ainvoke({'messages': [HumanMessage(content = user_input)]}, 
-    #                                         #context = context, 
-    #                                         config = {'configurable':{'thread_id': thread_id,'user_id': user_id, 'context': context}})
-    #     else:
-    #         return await self.planner_agent.ainvoke(None, 
-    #                                         #context = context, 
-    #                                         config = {'configurable':{'thread_id': thread_id,'user_id': user_id}})
-

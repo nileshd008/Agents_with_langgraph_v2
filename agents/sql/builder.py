@@ -4,7 +4,7 @@ from .state import SqlState
 from langchain.agents import create_agent
 
 
-def sql_builder(llm, tools, checkpointer, middlewares, store):
+def sql_builder(llm, tools, checkpointer, middlewares, store, context_schema):
     
     return create_agent(
         name = 'sql',
@@ -14,6 +14,7 @@ def sql_builder(llm, tools, checkpointer, middlewares, store):
         tools = tools,
         middleware = middlewares,
         checkpointer = checkpointer,
-        store = store
+        store = store,
+        context_schema = context_schema
 
     )

@@ -10,19 +10,6 @@ import re
 import json
 
 
-# @registry_tool(tags = ['all'],
-#         domains = ['tool'],
-#         source = 'local',
-#         visibility = 'shared',
-#         allowed_agents = ['planner', 'sql', 'visualization'],
-#         server_name = None)
-# @tool
-# async def tricky_math(x: int, y: int):
-#     "Tricky math tool"
-#     print('from tricky math', x, y)
-#     return x*y
-
-
 
 @registry_tool(tags = ['all'],
         domains = ['tool'],
@@ -36,16 +23,12 @@ async def get_artifact(artifact_id: str, runtime: ToolRuntime):
     Load artifact using artifact_id.
     
     """
-    print("inside get_artifact")
     result = await runtime.store.aget(('manifest', runtime.config["configurable"]["user_id"]), artifact_id)
     manifest = result.value
-    print('manifest', manifest)
 
     if manifest['mime_type'] == 'application/json':
         result = await runtime.store.aget(('artifact', runtime.config["configurable"]["user_id"]), artifact_id)
         data = result.value
-
-        print('data', data)
 
         return json.dumps(
             {

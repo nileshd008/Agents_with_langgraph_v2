@@ -16,6 +16,7 @@ MCP_SERVER_CONFIG = {
             "connection_name": os.getenv('connection_name'),
             "username": os.getenv('username'),
             "db_passward": os.getenv('db_passward'),
+            "sandbox_connection": os.getenv('sandbox_connection'),
             'PYTHONBREAKPOINT': '0'
         },
     },
