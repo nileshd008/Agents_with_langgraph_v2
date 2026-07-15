@@ -1,0 +1,1 @@
+2026-07-15 13:12:48,980 - INFO - Processing request of type ListToolsRequest

@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  sandbox_db:
+    image: postgres:16-alpine
+    container_name: sandbox_postgres
+    environment:
+      POSTGRES_USER: sandbox_user
+      POSTGRES_PASSWORD: sandbox_password
+      POSTGRES_DB: sandbox_workspace
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sandbox_user -d sandbox_workspace"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+  
+  mcp_server:
+    build: ./mcp_server
+    container_name: mcp_runtime_server
+    ports:
+      - "8000:8000"
+    depends_on:
+      sandbox_db:
+        condition: service_healthy
+    environment:
+      - sandbox_connection=postgresql://sandbox_user:sandbox_password@sandbox_db:5432/sandbox_workspace
+      - database_name=${database_name}
+      - username=${username}
+      - db_password=${db_password}
+      - db_host=${db_host}
+      - db_dialect=${db_dialect}
+      - connection_name=${connection_name}
+      - db_port=${db_port}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/mcp/"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  checkpoint_db:
+    image: postgres:16-alpine
+    container_name: checkpoint_postgres
+    environment:
+      POSTGRES_USER: agent_admin
+      POSTGRES_PASSWORD: framework_secret_pass
+      POSTGRES_DB: agent_workspace
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent_admin -d agent_workspace"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+  
+  agent_api:
+    build: ./agent_api
+    container_name: agent_runtime_api
+    ports:
+      - "8050:8050"
+    depends_on:
+      mcp_server:
+        condition: service_healthy
+      checkpoint_db:
+        condition: service_healthy
+    environment:
+      - PYTHONWARNINGS=ignore::LangChainPendingDeprecationWarning
+      - MCP_SERVER_URL=http://mcp_server:8000/mcp
+      - CHECKPOINT_KIND=${CHECKPOINT_KIND}
+      - CHECKPOINT_URL=${CHECKPOINT_URL}
+      - LLM_MODEL=${LLM_MODEL}
+      - DEEPINFRA_API_KEY=${DEEPINFRA_API_KEY}
+      - LLM_BASE_URL=${LLM_BASE_URL}
+      - db_dialect=${db_dialect}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8050/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  ui:
+    build: ./ui
+    container_name: agent_frontend_ui
+    ports:
+      - "3000:3000"
+    depends_on:
+      agent_api:
+        condition: service_healthy
+    environment:
+      - BACKEND_API_URL=http://agent_api:8050
