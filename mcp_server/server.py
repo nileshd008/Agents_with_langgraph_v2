@@ -1,19 +1,21 @@
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+import sqlalchemy
 from fastmcp import FastMCP, Client
 from sqlalchemy.schema import CreateTable
 from sqlalchemy.dialects import sqlite
-from sqlalchemy import Table, MetaData, create_engine, Select
-import sqlalchemy
-from typing import List, Dict
+from sqlalchemy import Table, MetaData, create_engine, Select, text
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Dict
 from decimal import Decimal
 import os
 import pandas as pd
-from sqlalchemy import text
 import json
 import plotly.express as px
 import plotly.io as pio
 import plotly.graph_objects as go
-from pydantic import BaseModel, Field, field_validator
+
 import urllib.parse
 import sys
 import logging
@@ -35,7 +37,7 @@ if os.environ['db_dialect'].lower()=='postgres':
 else:
     exe = 'pymysql'
 
-engine = create_engine(f"{os.environ['db_dialect']}+{exe}://{os.environ['username']}:{urllib.parse.quote_plus(os.environ['db_password'])}@{os.environ['db_host']}:{os.environ['db_port']}/{os.environ['database_name']}")
+engine = create_engine(f"""{os.environ['db_dialect']}+{exe}://{os.environ['username']}:{urllib.parse.quote_plus(os.environ['db_password'])}@{os.environ['db_host']}:{os.environ['db_port']}/{os.environ['database_name']}""")
 sandbox_engine = create_engine(f"{os.environ['sandbox_connection']}")
 df = None
 result = None

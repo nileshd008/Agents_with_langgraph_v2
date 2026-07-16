@@ -3,7 +3,7 @@ AGENT_MCP_ACCESS_CONF = {
   'planner':{
     'enable_mcp': True,
     'mcp_servers': ['local_mcp'],
-    'middleware': ['store_artifact']
+    'middleware': ['query_sanitizer','store_artifact' ]
   },
   'sql':{
     'enable_mcp': True,

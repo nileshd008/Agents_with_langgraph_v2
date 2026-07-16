@@ -65,6 +65,7 @@ services:
       checkpoint_db:
         condition: service_healthy
     environment:
+      - PYTHONUNBUFFERED=1
       - PYTHONWARNINGS=ignore::LangChainPendingDeprecationWarning
       - MCP_SERVER_URL=http://mcp_server:8000/mcp
       - CHECKPOINT_KIND=${CHECKPOINT_KIND}

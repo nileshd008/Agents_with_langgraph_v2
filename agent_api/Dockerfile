@@ -1,32 +1,32 @@
-FROM python:3.12-alpine AS builder
+FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
-
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     gcc \
-    musl-dev \
-    postgresql-dev
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
 RUN uv venv /opt/venv
 
+ENV PATH="/opt/venv/bin:$PATH"
 
 COPY requirements.txt .
-RUN . /opt/venv/bin/activate && uv pip install --no-cache -r requirements.txt
+RUN uv pip install --no-cache -r requirements.txt
 
 
-FROM python:3.12-alpine
+FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN apk add --no-cache \
-    libpq \
-    curl
-
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /opt/venv /opt/venv
 
