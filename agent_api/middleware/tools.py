@@ -1,5 +1,6 @@
-from langchain.agents.middleware import wrap_tool_call, after_model, before_agent
+from langchain.agents.middleware import wrap_tool_call, after_model, before_agent, after_agent
 from langgraph.runtime import Runtime
+from langgraph.graph.message import RemoveMessage
 from agents.planner.state import PlnnerState
 from langchain.tools.tool_node import ToolCallRequest
 from typing import Callable
@@ -118,6 +119,8 @@ async def store_artifact(request: ToolCallRequest, handler: Callable[[ToolCallRe
 
     return result
 
+
+
 @before_agent(can_jump_to=["end"])
 async def query_sanitizer(state: PlnnerState, runtime: Runtime):
     messages = state.get("messages", [])
@@ -188,3 +191,22 @@ async def query_sanitizer(state: PlnnerState, runtime: Runtime):
         ],
         "jump_to": "end",
     }
+
+
+@after_agent
+async def compres_and_clean(state: PlnnerState, runtime: Runtime):
+    deletes = []
+
+    for msg in state['messages']:
+        if isinstance(msg, AIMessage):
+            if msg.tool_calls and msg.tool_calls[0].get('name') in ['update_state', 'get_state']:
+                deletes.append(RemoveMessage(msg.id))
+        if isinstance(msg, ToolMessage):
+            if msg.name in ['update_state', 'get_state']:
+                deletes.append(RemoveMessage(msg.id))
+
+    return {'messages': deletes} if deletes else None
+    
+
+            
+            

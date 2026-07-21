@@ -1,0 +1,16 @@
+services:
+  sandbox_db:
+    image: postgres:16
+
+    container_name: sandbox_postgres
+
+    environment:
+      POSTGRES_USER: sandbox_user
+      POSTGRES_PASSWORD: sandbox_password
+      POSTGRES_DB: sandbox_workspace
+
+    ports:
+      - "5433:5432"
+
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U sandbox_user -d sandbox_workspace"]

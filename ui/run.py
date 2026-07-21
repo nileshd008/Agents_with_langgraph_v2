@@ -6,17 +6,21 @@ import time
 
 API_URL = os.getenv('BACKEND_API_URL', 'http://localhost:8000')
 
+# --- Helper to Update Session Timestamp ---
 def touch_session(thread_id):
     """Updates the last touched time for a session to now."""
     st.session_state.all_sessions[thread_id] = time.time()
 
+# --- Initialize Global Session Storage ---
+# We use a dict: { thread_id: timestamp } to enable sorting by last touched time
 if "all_sessions" not in st.session_state:
     st.session_state.all_sessions = {}
 
-
+# --- Sidebar Session Control ---
 st.sidebar.title("Chat Management")
 
-if st.sidebar.button("New Chat Session", use_container_width=True):
+# Button to spawn a brand new session
+if st.sidebar.button("➕ New Chat Session", use_container_width=True):
     for key in ["thread_id", "chat_history"]:
         if key in st.session_state:
             del st.session_state[key]
@@ -53,6 +57,7 @@ for past_id, _ in sorted_sessions:
         st.rerun()
 
 
+# --- Initialize Current Session State ---
 if "thread_id" not in st.session_state:
     new_id = f"session_{uuid.uuid4().hex[:8]}"
     st.session_state.thread_id = new_id
@@ -80,7 +85,18 @@ if st.session_state.thread_id not in st.session_state.all_sessions:
 
 
 for msg in st.session_state.chat_history:
-    content = msg.get("content", "").strip()
+    if msg.get('type') == 'ToolMessage':
+        continue
+
+    content = msg.get("content", "")
+
+    if isinstance(content, list):
+        content = "\n".join(
+            item["text"] if isinstance(item, dict) and "text" in item else str(item)
+            for item in content
+        )
+    content = content.strip()
+
     if not content:
         continue
 

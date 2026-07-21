@@ -5,6 +5,7 @@ from langgraph.prebuilt import ToolRuntime
 from langchain_core.tools import tool
 from tools.decorators import registry_tool
 from core.contracts import AppRuntimeContext
+from langchain.tools import ToolException
 import re
 import asyncio
 import copy
@@ -20,24 +21,24 @@ import copy
 async def sql_specialist(query: str, runtime: ToolRuntime):
     """You are specialized text-to-sql Agent to Generate SQL query from user question."""
     
-  
-    clean_state = copy.deepcopy(runtime.state)
-    clean_state['messages'] = [HumanMessage(content = query)]
+    try:
+        
+        clean_state = copy.deepcopy(runtime.state)
+        clean_state['messages'] = [HumanMessage(content = query)]
 
-    sub_config = {"configurable": {}}
-    sub_config['configurable']['thread_id'] = 'thread-sql-' + re.search(r'\-(\d+)$', runtime.config['configurable']['thread_id']).group(1)
-    sub_config['configurable']['user_id'] = runtime.config['configurable']['user_id']
+        sub_config = {"configurable": {}}
+        sub_config['configurable']['thread_id'] = 'thread-sql-100' #+ re.search(r'\-(\d+)$', runtime.config['configurable']['thread_id']).group(1)
+        sub_config['configurable']['user_id'] = runtime.config['configurable']['user_id']
 
-
-    result = await runtime.context.agent_registry.get('sql').ainvoke({'messages': [HumanMessage(content = query)]}, config = sub_config, context = runtime.context)
-    state = await runtime.context.agent_registry.get('sql').aget_state(config = sub_config)
-
-    print('messages from sql_specialist',state.values['messages'])
+        result = await runtime.context.agent_registry.get('sql').ainvoke({'messages': [HumanMessage(content = query)]}, config = sub_config, context = runtime.context)
+        state = await runtime.context.agent_registry.get('sql').aget_state(config = sub_config)
+        
+        sub_agent_state = {i: state.values[i] for i in state.values if i not in ['messages', 'structured_response']}
+        sub_agent_state['messages'] = [ToolMessage(content = result['messages'][-1].content, tool_call_id = runtime.tool_call_id, name = 'sql_specialist')]
+        return Command(update = sub_agent_state)
     
-    sub_agent_state = {i: state.values[i] for i in state.values if i not in ['messages', 'structured_response']}
-    sub_agent_state['messages'] = [ToolMessage(content = result['messages'][-1].content, tool_call_id = runtime.tool_call_id, name = 'sql_specialist')]
-    return Command(update = sub_agent_state)
-
+    except Exception as e:
+        raise ToolException(str(e))
 
 
 @registry_tool(tags = ['plnner_tool'],

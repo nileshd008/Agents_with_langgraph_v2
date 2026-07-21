@@ -1,21 +1,6 @@
 version: '3.8'
 
 services:
-  sandbox_db:
-    image: postgres:16-alpine
-    container_name: sandbox_postgres
-    environment:
-      POSTGRES_USER: sandbox_user
-      POSTGRES_PASSWORD: sandbox_password
-      POSTGRES_DB: sandbox_workspace
-    ports:
-      - "5433:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U sandbox_user -d sandbox_workspace"]
-      interval: 3s
-      timeout: 3s
-      retries: 5
-  
   mcp_server:
     build: ./mcp_server
     container_name: mcp_runtime_server
@@ -25,16 +10,12 @@ services:
       sandbox_db:
         condition: service_healthy
     environment:
-      - sandbox_connection=postgresql://sandbox_user:sandbox_password@sandbox_db:5432/sandbox_workspace
-      - database_name=${database_name}
-      - username=${username}
-      - db_password=${db_password}
-      - db_host=${db_host}
+      - PYTHONUNBUFFERED=1
+      - sandbox_connection=${SANDBOX_CONNECTION}
       - db_dialect=${db_dialect}
-      - connection_name=${connection_name}
-      - db_port=${db_port}
+      - connection_string=${connection_string}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/mcp/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 5s
       timeout: 3s
       retries: 3

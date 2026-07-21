@@ -67,13 +67,16 @@ class AgentA:
             api_key=os.environ["DEEPINFRA_API_KEY"],
             base_url=os.environ['LLM_BASE_URL'],
             temperature=0.1,
-            model_kwargs={"tool_choice": "auto"}
+            reasoning_effort="none",
+            model_kwargs={
+                "tool_choice": "auto"
+            }
         )
 
-        gllm = ChatOpenAI(
-            model=os.getenv('LLM_MODEL'),
+        guard_llm = ChatOpenAI(
+            model="nvidia/Nemotron-Content-Safety-3.5",
             api_key=os.environ["DEEPINFRA_API_KEY"],
-            base_url=os.environ['LLM_BASE_URL'],
+            base_url="https://api.deepinfra.com/v1/openai",
             temperature=0.1
         )
 
@@ -103,22 +106,22 @@ class AgentA:
         agent_registry = AgentRegistry()
         agent_registry.register('sql', sql_agent)
         agent_registry.register('visualization', visualization_agent)
-        agent_registry.register('gen_llm', gllm)
+        agent_registry.register('guard_llm', guard_llm)
 
         self.context = AppRuntimeContext(
-            user_id='nil',
-            tenant_id='8888',
-            project_id='agent',
-            agent_registry=agent_registry
+            user_id = 'nil',
+            tenant_id = '8888',
+            project_id = 'agent',
+            agent_registry = agent_registry
         )
 
         self.planner_agent = planner_builder(
             llm,
-            tools=await tools_selector.for_agent('planner'),
-            checkpointer=self.checkpoint,
-            middlewares=middlewares.for_agent('planner'),
-            store=self.store,
-            context_schema=AppRuntimeContext
+            tools = await tools_selector.for_agent('planner'),
+            checkpointer = self.checkpoint,
+            middlewares = middlewares.for_agent('planner'),
+            store = self.store,
+            context_schema = AppRuntimeContext
         )
         
         return self
@@ -163,6 +166,7 @@ class AgentA:
 
             if isinstance(result, dict) and 'messages' in result:
                 result['messages'] = [{"type": type(m).__name__, "content": m.content} for m in result['messages']]
+
             return result
         except Exception as e:
             return {'messages': [{"type": "AIMessage", "content": str(e)}]}

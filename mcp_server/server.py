@@ -1,6 +1,11 @@
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+app = FastAPI(
+    title='App Name',
+    version='1.0.0'
+)
 import sqlalchemy
 from fastmcp import FastMCP, Client
 from sqlalchemy.schema import CreateTable
@@ -23,6 +28,7 @@ import copy
 
 mcp_server = FastMCP()
 
+
 logging.basicConfig(
     filename="mcp_server_debug.txt",
     filemode="w",
@@ -32,16 +38,16 @@ logging.basicConfig(
 
 logger = logging.getLogger("db_tools_server")
 
-if os.environ['db_dialect'].lower()=='postgres':
+if os.environ['db_dialect'].lower() == 'postgres':
     exe = 'psycopg2'
 else:
     exe = 'pymysql'
 
-engine = create_engine(f"""{os.environ['db_dialect']}+{exe}://{os.environ['username']}:{urllib.parse.quote_plus(os.environ['db_password'])}@{os.environ['db_host']}:{os.environ['db_port']}/{os.environ['database_name']}""")
-sandbox_engine = create_engine(f"{os.environ['sandbox_connection']}")
+engine = create_engine(str(os.environ['connection_string']))
+sandbox_engine = create_engine(str(os.environ['sandbox_connection']))
+
 df = None
 result = None
-
 
 @mcp_server.tool
 def greeting_tool(name: str):
@@ -66,7 +72,6 @@ def get_sample_for_column(table_name):
         return df.to_dict(orient="records")
         
     except Exception as e:
-        print(f"Error sampling table {table_name}: {e}")
         return []
 
 
@@ -151,7 +156,6 @@ def validate_query(query: str, dialect:str, requires_sandbox: bool, tables: List
 
                 with original_engine.connect() as source_conn:
                     result = source_conn.execute(Select(source_table))
-
                     rows = [dict(row._mapping) for row in result]
                 if rows:
                     with sandbox_engine.begin() as target_conn:
@@ -168,7 +172,6 @@ def validate_query(query: str, dialect:str, requires_sandbox: bool, tables: List
                 sql_result = conn.execute(sqlalchemy.text(f"Explain {query}"))
                 return {'status': 'SUCCESS', 'error': None, 'Query': query, 'result': sql_result}
         else:
-            print('inside', requires_sandbox)
             res = copy_to_sandbox(engine, sandbox_engine, tables)
             if res['status'].lower() == 'success':
                 conn = sandbox_engine.connect()
@@ -281,7 +284,22 @@ def execute_graph(query: str, graph_code: str):
 
     return {'status': 'SUCCESS', 'Error': None, 'data': pio.to_json(fig)}
 
+
+@mcp_server.custom_route("/health", methods=["GET"])
+async def health(request):
+    return JSONResponse({"status": "healthy"})
+
 app = mcp_server.http_app()
-if __name__=='__main__':
-    #mcp_server.run(transport = 'stdio')
-    mcp_server.run(transport="http", host="0.0.0.0", port=8020)
+
+# mcp_app = mcp_server.http_app(path='/mcp')
+# app = FastAPI(lifespan=mcp_app.lifespan)
+
+# @app.get("/health")
+# async def health():
+#     return {"status": "healthy"}
+
+# app.mount("/", mcp_app)
+
+# if __name__=='__main__':
+#     #mcp_server.run(transport = 'stdio')
+#     mcp_server.run(transport="http", host="0.0.0.0", port=8020)
